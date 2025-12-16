@@ -197,14 +197,18 @@ class MikrotikNATSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["nat"]:
-            if self.coordinator.data["nat"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["nat"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['in-interface']}:{self._data['dst-port']}-"
                 f"{self._data['out-interface']}:{self._data['to-addresses']}:{self._data['to-ports']}"
             ):
                 value = self.coordinator.data["nat"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, False)
@@ -217,14 +221,18 @@ class MikrotikNATSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["nat"]:
-            if self.coordinator.data["nat"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["nat"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['in-interface']}:{self._data['dst-port']}-"
                 f"{self._data['out-interface']}:{self._data['to-addresses']}:{self._data['to-ports']}"
             ):
                 value = self.coordinator.data["nat"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, True)
@@ -244,15 +252,19 @@ class MikrotikMangleSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["mangle"]:
-            if self.coordinator.data["mangle"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["mangle"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['src-address']}:{self._data['src-port']}-"
                 f"{self._data['dst-address']}:{self._data['dst-port']},"
                 f"{self._data['src-address-list']}-{self._data['dst-address-list']}"
             ):
                 value = self.coordinator.data["mangle"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, False)
@@ -265,15 +277,19 @@ class MikrotikMangleSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["mangle"]:
-            if self.coordinator.data["mangle"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["mangle"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['src-address']}:{self._data['src-port']}-"
                 f"{self._data['dst-address']}:{self._data['dst-port']},"
                 f"{self._data['src-address-list']}-{self._data['dst-address-list']}"
             ):
                 value = self.coordinator.data["mangle"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, True)
@@ -293,14 +309,18 @@ class MikrotikFilterSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["filter"]:
-            if self.coordinator.data["filter"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
                 f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
                 f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
             ):
                 value = self.coordinator.data["filter"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, False)
@@ -313,14 +333,18 @@ class MikrotikFilterSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["filter"]:
-            if self.coordinator.data["filter"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
                 f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
                 f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
             ):
                 value = self.coordinator.data["filter"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, True)
@@ -340,10 +364,14 @@ class MikrotikQueueSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
                 value = self.coordinator.data["queue"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, False)
@@ -356,10 +384,14 @@ class MikrotikQueueSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
                 value = self.coordinator.data["queue"][uid][".id"]
+
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
 
         mod_param = self.entity_description.data_switch_parameter
         await self.coordinator.async_set_value(path, param, value, mod_param, True)
