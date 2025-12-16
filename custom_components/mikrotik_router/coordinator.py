@@ -7,6 +7,8 @@ import logging
 import re
 import pytz
 
+from time import time
+
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from ipaddress import ip_address, IPv4Network
@@ -226,6 +228,8 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
         )
         self.name = config_entry.data[CONF_NAME]
         self.host = config_entry.data[CONF_HOST]
+
+        self._ethernet_monitor_last_update: float = 0.0
 
         self.ds = {
             "access": {},
@@ -827,6 +831,11 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
 
         # Udpate virtual interfaces
         bonding = False
+        monitor_interval = max(self.option_scan_interval.seconds, 60)
+        do_ethernet_monitor = (time() - self._ethernet_monitor_last_update) >= monitor_interval
+        if do_ethernet_monitor:
+            self._ethernet_monitor_last_update = time()
+
         for uid, vals in self.ds["interface"].items():
             if self.ds["interface"][uid]["type"] == "bond":
                 bonding = True
@@ -842,6 +851,8 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
                 ] = f"{vals['port-mac-address']}-{vals['name']}"
 
             if self.ds["interface"][uid]["type"] == "ether":
+                if not do_ethernet_monitor:
+                    continue
                 if (
                     "sfp-shutdown-temperature" in vals
                     and vals["sfp-shutdown-temperature"] != ""
