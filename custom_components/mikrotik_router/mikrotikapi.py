@@ -122,57 +122,60 @@ class MikrotikAPI:
             "port": self._port,
         }
 
-        self.lock.acquire()
-        try:
-            if self._use_ssl:
-                if self._ssl_wrapper is None:
-                    ssl_context = ssl.create_default_context()
+        with self.lock:
+            try:
+                if self._use_ssl:
+                    if self._ssl_wrapper is None:
+                        ssl_context = ssl.create_default_context()
 
-                    # For IP-based connections, hostname checks generally don't work with
-                    # MikroTik's default/self-signed certs. If the user connects via a
-                    # hostname and enables verification, do enforce hostname validation.
-                    host_for_ip_check = str(self._host).strip()
-                    if host_for_ip_check.startswith("[") and "]" in host_for_ip_check:
-                        host_for_ip_check = host_for_ip_check.split("]", 1)[0][1:]
-                    elif ":" in host_for_ip_check and host_for_ip_check.count(":") == 1:
-                        host_for_ip_check = host_for_ip_check.rsplit(":", 1)[0]
+                        # For IP-based connections, hostname checks generally don't work with
+                        # MikroTik's default/self-signed certs. If the user connects via a
+                        # hostname and enables verification, do enforce hostname validation.
+                        host_for_ip_check = str(self._host).strip()
+                        if host_for_ip_check.startswith("[") and "]" in host_for_ip_check:
+                            host_for_ip_check = host_for_ip_check.split("]", 1)[0][1:]
+                        elif ":" in host_for_ip_check and host_for_ip_check.count(":") == 1:
+                            host_for_ip_check = host_for_ip_check.rsplit(":", 1)[0]
 
-                    try:
-                        ipaddress.ip_address(host_for_ip_check)
-                        is_ip_address = True
-                    except ValueError:
-                        is_ip_address = False
+                        try:
+                            ipaddress.ip_address(host_for_ip_check)
+                            is_ip_address = True
+                        except ValueError:
+                            is_ip_address = False
 
-                    ssl_context.check_hostname = bool(self._ssl_verify and not is_ip_address)
-                    if self._ssl_verify:
-                        ssl_context.verify_mode = ssl.CERT_REQUIRED
-                        ssl_context.verify_flags &= ~ssl.VERIFY_X509_STRICT
-                    else:
-                        ssl_context.verify_mode = ssl.CERT_NONE
-                    self._ssl_wrapper = ssl_context.wrap_socket
-                kwargs["ssl_wrapper"] = self._ssl_wrapper
-            self._connection = librouteros.connect(
-                self._host, self._username, self._password, **kwargs
-            )
-        except Exception as e:
-            if not self.connection_error_reported:
-                _LOGGER.error("Mikrotik %s error while connecting: %s", self._host, e)
-                self.connection_error_reported = True
+                        ssl_context.check_hostname = bool(
+                            self._ssl_verify and not is_ip_address
+                        )
+                        if self._ssl_verify:
+                            ssl_context.verify_mode = ssl.CERT_REQUIRED
+                            ssl_context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+                        else:
+                            ssl_context.verify_mode = ssl.CERT_NONE
 
-            self.error_to_strings(f"{e}")
-            self._connection = None
-            self.lock.release()
-            return False
+                        self._ssl_wrapper = ssl_context.wrap_socket
+
+                    kwargs["ssl_wrapper"] = self._ssl_wrapper
+
+                self._connection = librouteros.connect(
+                    self._host, self._username, self._password, **kwargs
+                )
+            except Exception as e:
+                if not self.connection_error_reported:
+                    _LOGGER.error("Mikrotik %s error while connecting: %s", self._host, e)
+                    self.connection_error_reported = True
+
+                self.error_to_strings(f"{e}")
+                self._connection = None
+                return False
+
+        if self.connection_error_reported:
+            _LOGGER.warning("Mikrotik Reconnected to %s", self._host)
+            self.connection_error_reported = False
         else:
-            if self.connection_error_reported:
-                _LOGGER.warning("Mikrotik Reconnected to %s", self._host)
-                self.connection_error_reported = False
-            else:
-                _LOGGER.debug("Mikrotik Connected to %s", self._host)
+            _LOGGER.debug("Mikrotik Connected to %s", self._host)
 
-            self._connected = True
-            self._reconnected = True
-            self.lock.release()
+        self._connected = True
+        self._reconnected = True
 
         return self._connected
 
@@ -213,39 +216,34 @@ class MikrotikAPI:
         if not self.connection_check():
             return None
 
-        self.lock.acquire()
-        try:
-            _LOGGER.debug("API query: %s", path)
-            response = self._connection.path(path)
-        except Exception as e:
-            self.disconnect("path", e)
-            self.lock.release()
-            return None
-
-        if response and return_list and not command:
+        with self.lock:
             try:
-                response = list(response)
-            except Exception as e:
-                if path == "/system/health" and "no such command prefix" in str(e):
-                    self.disable_health = True
-                    self.lock.release()
-                    return None
-
-                self.disconnect(f"building list for path {path}", e)
-                self.lock.release()
-                return None
-
-        elif response and command:
-            _LOGGER.debug("API query: %s, %s, %s", path, command, args)
-            try:
-                response = list(response(command, **args))
+                _LOGGER.debug("API query: %s", path)
+                response = self._connection.path(path)
             except Exception as e:
                 self.disconnect("path", e)
-                self.lock.release()
                 return None
 
-        self.lock.release()
-        return response or None
+            if response and return_list and not command:
+                try:
+                    response = list(response)
+                except Exception as e:
+                    if path == "/system/health" and "no such command prefix" in str(e):
+                        self.disable_health = True
+                        return None
+
+                    self.disconnect(f"building list for path {path}", e)
+                    return None
+
+            elif response and command:
+                _LOGGER.debug("API query: %s, %s, %s", path, command, args)
+                try:
+                    response = list(response(command, **args))
+                except Exception as e:
+                    self.disconnect("path", e)
+                    return None
+
+            return response or None
 
     # ---------------------------
     #   set_value
@@ -280,16 +278,14 @@ class MikrotikAPI:
             return True
 
         params = {".id": entry_found, mod_param: mod_value}
-        self.lock.acquire()
-        try:
-            response.update(**params)
-        except Exception as e:
-            self.disconnect("set_value", e)
-            self.lock.release()
-            return False
+        with self.lock:
+            try:
+                response.update(**params)
+            except Exception as e:
+                self.disconnect("set_value", e)
+                return False
 
-        self.lock.release()
-        return True
+            return True
 
     # ---------------------------
     #   execute
@@ -331,16 +327,14 @@ class MikrotikAPI:
         if attributes:
             params.update(attributes)
 
-        self.lock.acquire()
-        try:
-            tuple(response(command, **params))
-        except Exception as e:
-            self.disconnect("execute", e)
-            self.lock.release()
-            return False
+        with self.lock:
+            try:
+                tuple(response(command, **params))
+            except Exception as e:
+                self.disconnect("execute", e)
+                return False
 
-        self.lock.release()
-        return True
+            return True
 
     # ---------------------------
     #   run_script
@@ -355,30 +349,28 @@ class MikrotikAPI:
         if response is None:
             return False
 
-        self.lock.acquire()
-        for tmp in response:
-            if "name" not in tmp:
-                continue
+        with self.lock:
+            for tmp in response:
+                if "name" not in tmp:
+                    continue
 
-            if tmp["name"] != name:
-                continue
+                if tmp["name"] != name:
+                    continue
 
-            entry_found = tmp[".id"]
+                entry_found = tmp[".id"]
 
-        if not entry_found:
-            _LOGGER.error("Mikrotik %s Script %s not found", self._host, name)
+            if not entry_found:
+                _LOGGER.error("Mikrotik %s Script %s not found", self._host, name)
+                return True
+
+            try:
+                run = response("run", **{".id": entry_found})
+                tuple(run)
+            except Exception as e:
+                self.disconnect("run_script", e)
+                return False
+
             return True
-
-        try:
-            run = response("run", **{".id": entry_found})
-            tuple(run)
-        except Exception as e:
-            self.disconnect("run_script", e)
-            self.lock.release()
-            return False
-
-        self.lock.release()
-        return True
 
     # ---------------------------
     #   arp_ping
@@ -399,23 +391,19 @@ class MikrotikAPI:
             "interface": interface,
             "address": address,
         }
-        self.lock.acquire()
-        try:
-            # _LOGGER.debug("Ping host query: %s", args["address"])
-            ping = response("/ping", **args)
-        except Exception as e:
-            self.disconnect("arp_ping", e)
-            self.lock.release()
-            return False
+        with self.lock:
+            try:
+                # _LOGGER.debug("Ping host query: %s", args["address"])
+                ping = response("/ping", **args)
+            except Exception as e:
+                self.disconnect("arp_ping", e)
+                return False
 
-        try:
-            ping = list(ping)
-        except Exception as e:
-            self.disconnect("arp_ping", e)
-            self.lock.release()
-            return False
-
-        self.lock.release()
+            try:
+                ping = list(ping)
+            except Exception as e:
+                self.disconnect("arp_ping", e)
+                return False
 
         for tmp in ping:
             if "received" in tmp and tmp["received"] > 0:
@@ -467,23 +455,22 @@ class MikrotikAPI:
         if use_accounting:
             accounting = self.query("/ip/accounting", return_list=False)
 
-            self.lock.acquire()
-            try:
-                # Prepare command
-                take = accounting("snapshot/take")
-            except Exception as e:
-                self.disconnect("accounting_snapshot", e)
-                self.lock.release()
+            if accounting is None:
                 return 0
 
-            try:
-                list(take)
-            except Exception as e:
-                self.disconnect("accounting_snapshot", e)
-                self.lock.release()
-                return 0
+            with self.lock:
+                try:
+                    # Prepare command
+                    take = accounting("snapshot/take")
+                except Exception as e:
+                    self.disconnect("accounting_snapshot", e)
+                    return 0
 
-            self.lock.release()
+                try:
+                    list(take)
+                except Exception as e:
+                    self.disconnect("accounting_snapshot", e)
+                    return 0
 
         # First request will be discarded because we cannot know when the last data was retrieved
         # prevents spikes in data
