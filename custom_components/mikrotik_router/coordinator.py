@@ -458,12 +458,24 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
         """Change value using Mikrotik API"""
         return self.api.set_value(path, param, value, mod_param, mod_value)
 
+    async def async_set_value(self, path, param, value, mod_param, mod_value):
+        """Change value using Mikrotik API without blocking the event loop."""
+        return await self.hass.async_add_executor_job(
+            self.api.set_value, path, param, value, mod_param, mod_value
+        )
+
     # ---------------------------
     #   execute
     # ---------------------------
     def execute(self, path, command, param, value, attributes=None):
         """Change value using Mikrotik API"""
         return self.api.execute(path, command, param, value, attributes)
+
+    async def async_execute(self, path, command, param, value, attributes=None):
+        """Execute a command using Mikrotik API without blocking the event loop."""
+        return await self.hass.async_add_executor_job(
+            self.api.execute, path, command, param, value, attributes
+        )
 
     # ---------------------------
     #   get_capabilities

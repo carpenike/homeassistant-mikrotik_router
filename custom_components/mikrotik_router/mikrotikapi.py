@@ -254,14 +254,17 @@ class MikrotikAPI:
         if response is None:
             return False
 
-        for tmp in response:
-            if param not in tmp:
-                continue
+        if param == ".id":
+            entry_found = value
+        else:
+            for tmp in response:
+                if param not in tmp:
+                    continue
 
-            if tmp[param] != value:
-                continue
+                if tmp[param] != value:
+                    continue
 
-            entry_found = tmp[".id"]
+                entry_found = tmp[".id"]
 
         if not entry_found:
             _LOGGER.error(
