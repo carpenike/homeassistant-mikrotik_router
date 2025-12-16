@@ -52,18 +52,60 @@ async def async_setup_entry(
 class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
     """Representation of a switch."""
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._optimistic_is_on: bool | None = None
+        self._write_in_progress = False
+
     @property
     def is_on(self) -> bool:
         """Return true if device is on."""
+        if self._optimistic_is_on is not None:
+            return self._optimistic_is_on
+
         return self._data[self.entity_description.data_attribute]
 
     @property
     def icon(self) -> str:
         """Return the icon."""
-        if self._data[self.entity_description.data_attribute]:
+        if self.is_on:
             return self.entity_description.icon_enabled
         else:
             return self.entity_description.icon_disabled
+
+    def _set_optimistic_state(self, is_on: bool) -> None:
+        self._optimistic_is_on = is_on
+        self.async_write_ha_state()
+
+    async def _async_write_and_refresh(
+        self,
+        *,
+        path: str,
+        param: str,
+        value: Any,
+        mod_param: str,
+        mod_value: Any,
+        optimistic_is_on: bool,
+    ) -> None:
+        if self._write_in_progress:
+            return
+
+        previous_state = self.is_on
+        self._write_in_progress = True
+        self._set_optimistic_state(optimistic_is_on)
+        try:
+            result = await self.coordinator.async_set_value(
+                path, param, value, mod_param, mod_value
+            )
+            if result is False:
+                self._set_optimistic_state(previous_state)
+                return
+        finally:
+            self._write_in_progress = False
+
+        await self.coordinator.async_request_refresh()
+        self._optimistic_is_on = None
+        self.async_write_ha_state()
 
     def turn_on(self, **kwargs: Any) -> None:
         """Required abstract method."""
@@ -82,8 +124,14 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=False,
+            optimistic_is_on=True,
+        )
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -94,8 +142,14 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=True,
+            optimistic_is_on=False,
+        )
 
 
 # ---------------------------
@@ -134,7 +188,7 @@ class MikrotikPortSwitch(MikrotikSwitch):
         else:
             icon = self.entity_description.icon_disabled
 
-        if not self._data["enabled"]:
+        if not self.is_on:
             icon = "mdi:lan-disconnect"
 
         return icon
@@ -153,13 +207,23 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-
-        if "poe-out" in self._data and self._data["poe-out"] == "off":
-            path = "/interface/ethernet"
-            await self.coordinator.async_set_value(path, param, value, "poe-out", "auto-on")
+        if self._write_in_progress:
+            return
+        self._write_in_progress = True
+        self._set_optimistic_state(True)
+        try:
+            await self.coordinator.async_set_value(path, param, value, mod_param, False)
+            if "poe-out" in self._data and self._data["poe-out"] == "off":
+                path = "/interface/ethernet"
+                await self.coordinator.async_set_value(
+                    path, param, value, "poe-out", "auto-on"
+                )
+        finally:
+            self._write_in_progress = False
 
         await self.coordinator.async_request_refresh()
+        self._optimistic_is_on = None
+        self.async_write_ha_state()
 
     async def async_turn_off(self) -> Optional[str]:
         """Turn off the switch."""
@@ -175,13 +239,23 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-
-        if "poe-out" in self._data and self._data["poe-out"] == "auto-on":
-            path = "/interface/ethernet"
-            await self.coordinator.async_set_value(path, param, value, "poe-out", "off")
+        if self._write_in_progress:
+            return
+        self._write_in_progress = True
+        self._set_optimistic_state(False)
+        try:
+            await self.coordinator.async_set_value(path, param, value, mod_param, True)
+            if "poe-out" in self._data and self._data["poe-out"] == "auto-on":
+                path = "/interface/ethernet"
+                await self.coordinator.async_set_value(
+                    path, param, value, "poe-out", "off"
+                )
+        finally:
+            self._write_in_progress = False
 
         await self.coordinator.async_request_refresh()
+        self._optimistic_is_on = None
+        self.async_write_ha_state()
 
 
 # ---------------------------
@@ -211,8 +285,14 @@ class MikrotikNATSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=False,
+            optimistic_is_on=True,
+        )
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -235,8 +315,14 @@ class MikrotikNATSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=True,
+            optimistic_is_on=False,
+        )
 
 
 # ---------------------------
@@ -267,8 +353,14 @@ class MikrotikMangleSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=False,
+            optimistic_is_on=True,
+        )
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -292,8 +384,14 @@ class MikrotikMangleSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=True,
+            optimistic_is_on=False,
+        )
 
 
 # ---------------------------
@@ -323,8 +421,14 @@ class MikrotikFilterSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=False,
+            optimistic_is_on=True,
+        )
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -347,8 +451,14 @@ class MikrotikFilterSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=True,
+            optimistic_is_on=False,
+        )
 
 
 # ---------------------------
@@ -374,8 +484,14 @@ class MikrotikQueueSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=False,
+            optimistic_is_on=True,
+        )
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -394,8 +510,14 @@ class MikrotikQueueSwitch(MikrotikSwitch):
             return
 
         mod_param = self.entity_description.data_switch_parameter
-        await self.coordinator.async_set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_request_refresh()
+        await self._async_write_and_refresh(
+            path=path,
+            param=param,
+            value=value,
+            mod_param=mod_param,
+            mod_value=True,
+            optimistic_is_on=False,
+        )
 
 
 # ---------------------------
@@ -413,8 +535,18 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "resume"
-        await self.coordinator.async_execute(path, command, param, value)
+        if self._write_in_progress:
+            return
+        self._write_in_progress = True
+        self._set_optimistic_state(True)
+        try:
+            await self.coordinator.async_execute(path, command, param, value)
+        finally:
+            self._write_in_progress = False
+
         await self.coordinator.async_request_refresh()
+        self._optimistic_is_on = None
+        self.async_write_ha_state()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -425,5 +557,15 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "pause"
-        await self.coordinator.async_execute(path, command, param, value)
+        if self._write_in_progress:
+            return
+        self._write_in_progress = True
+        self._set_optimistic_state(False)
+        try:
+            await self.coordinator.async_execute(path, command, param, value)
+        finally:
+            self._write_in_progress = False
+
         await self.coordinator.async_request_refresh()
+        self._optimistic_is_on = None
+        self.async_write_ha_state()
