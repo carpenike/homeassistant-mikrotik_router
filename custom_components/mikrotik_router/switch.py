@@ -103,8 +103,16 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         finally:
             self._write_in_progress = False
 
+        # Request refresh but DON'T clear optimistic state yet
         await self.coordinator.async_request_refresh()
-        self._optimistic_is_on = None
+
+        # Only clear optimistic state if actual state matches expected
+        # This prevents UI flicker when MikroTik hasn't processed the change yet
+        actual_state = self._data.get(self.entity_description.data_attribute)
+        if actual_state == optimistic_is_on:
+            self._optimistic_is_on = None
+        # If it doesn't match, keep optimistic state - normal polling will sync
+
         self.async_write_ha_state()
 
     def turn_on(self, **kwargs: Any) -> None:
