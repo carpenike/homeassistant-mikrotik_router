@@ -5,7 +5,6 @@ from __future__ import annotations
 import ipaddress
 import logging
 import re
-import pytz
 
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -16,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.util.dt import utcnow
+from homeassistant.util import dt as dt_util
 
 
 from homeassistant.const import (
@@ -69,8 +68,6 @@ from .mikrotikapi import MikrotikAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_TIME_ZONE = None
-
 
 def is_valid_ip(address):
     try:
@@ -82,17 +79,12 @@ def is_valid_ip(address):
 
 def utc_from_timestamp(timestamp: float) -> datetime:
     """Return a UTC time from a timestamp."""
-    return pytz.utc.localize(datetime.utcfromtimestamp(timestamp))
+    return dt_util.utc_from_timestamp(timestamp)
 
 
 def as_local(dattim: datetime) -> datetime:
     """Convert a UTC datetime object to local time zone."""
-    if dattim.tzinfo == DEFAULT_TIME_ZONE:
-        return dattim
-    if dattim.tzinfo is None:
-        dattim = pytz.utc.localize(dattim)
-
-    return dattim.astimezone(DEFAULT_TIME_ZONE)
+    return dt_util.as_local(dattim)
 
 
 @dataclass
@@ -197,7 +189,7 @@ class MikrotikTrackerCoordinator(DataUpdateCoordinator[None]):
 
             # Update last seen
             if self.coordinator.ds["host"][uid]["available"]:
-                self.coordinator.ds["host"][uid]["last-seen"] = utcnow()
+                self.coordinator.ds["host"][uid]["last-seen"] = dt_util.utcnow()
 
         self.coordinator.host_tracking_initialized = True
 
@@ -2114,7 +2106,7 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
 
                 capsman_detected[uid] = True
                 self.ds["host"][uid]["available"] = True
-                self.ds["host"][uid]["last-seen"] = utcnow()
+                self.ds["host"][uid]["last-seen"] = dt_util.utcnow()
                 for key in ["mac-address", "interface"]:
                     self.ds["host"][uid][key] = vals[key]
 
@@ -2132,7 +2124,7 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
 
                 wireless_detected[uid] = True
                 self.ds["host"][uid]["available"] = True
-                self.ds["host"][uid]["last-seen"] = utcnow()
+                self.ds["host"][uid]["last-seen"] = dt_util.utcnow()
                 for key in [
                     "mac-address",
                     "interface",
