@@ -82,8 +82,8 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -94,8 +94,8 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -153,13 +153,13 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
 
         if "poe-out" in self._data and self._data["poe-out"] == "off":
             path = "/interface/ethernet"
-            self.coordinator.set_value(path, param, value, "poe-out", "auto-on")
+            await self.coordinator.async_set_value(path, param, value, "poe-out", "auto-on")
 
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> Optional[str]:
         """Turn off the switch."""
@@ -175,13 +175,13 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
 
         if "poe-out" in self._data and self._data["poe-out"] == "auto-on":
             path = "/interface/ethernet"
-            self.coordinator.set_value(path, param, value, "poe-out", "off")
+            await self.coordinator.async_set_value(path, param, value, "poe-out", "off")
 
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -197,18 +197,22 @@ class MikrotikNATSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["nat"]:
-            if self.coordinator.data["nat"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["nat"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['in-interface']}:{self._data['dst-port']}-"
                 f"{self._data['out-interface']}:{self._data['to-addresses']}:{self._data['to-ports']}"
             ):
                 value = self.coordinator.data["nat"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -217,18 +221,22 @@ class MikrotikNATSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["nat"]:
-            if self.coordinator.data["nat"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["nat"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['in-interface']}:{self._data['dst-port']}-"
                 f"{self._data['out-interface']}:{self._data['to-addresses']}:{self._data['to-ports']}"
             ):
                 value = self.coordinator.data["nat"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -244,9 +252,9 @@ class MikrotikMangleSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["mangle"]:
-            if self.coordinator.data["mangle"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["mangle"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['src-address']}:{self._data['src-port']}-"
                 f"{self._data['dst-address']}:{self._data['dst-port']},"
@@ -254,9 +262,13 @@ class MikrotikMangleSwitch(MikrotikSwitch):
             ):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -265,9 +277,9 @@ class MikrotikMangleSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["mangle"]:
-            if self.coordinator.data["mangle"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["mangle"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},"
                 f"{self._data['src-address']}:{self._data['src-port']}-"
                 f"{self._data['dst-address']}:{self._data['dst-port']},"
@@ -275,9 +287,13 @@ class MikrotikMangleSwitch(MikrotikSwitch):
             ):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -293,18 +309,22 @@ class MikrotikFilterSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["filter"]:
-            if self.coordinator.data["filter"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
                 f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
                 f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
             ):
                 value = self.coordinator.data["filter"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -313,18 +333,22 @@ class MikrotikFilterSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["filter"]:
-            if self.coordinator.data["filter"][uid]["uniq-id"] == (
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
                 f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
                 f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
                 f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
             ):
                 value = self.coordinator.data["filter"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -340,14 +364,18 @@ class MikrotikQueueSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
                 value = self.coordinator.data["queue"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -356,14 +384,18 @@ class MikrotikQueueSwitch(MikrotikSwitch):
 
         path = self.entity_description.data_switch_path
         param = ".id"
-        value = None
+        value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
                 value = self.coordinator.data["queue"][uid][".id"]
 
+        if value is None:
+            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            return
+
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -381,8 +413,8 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "resume"
-        self.coordinator.execute(path, command, param, value)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_execute(path, command, param, value)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -393,5 +425,5 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "pause"
-        self.coordinator.execute(path, command, param, value)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_execute(path, command, param, value)
+        await self.coordinator.async_request_refresh()
