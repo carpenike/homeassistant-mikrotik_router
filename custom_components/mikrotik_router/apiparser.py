@@ -3,10 +3,10 @@
 from datetime import datetime
 from logging import getLogger
 
-from pytz import utc
 from voluptuous import Optional
 
 from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.util import dt as dt_util
 
 from .const import TO_REDACT
 
@@ -18,7 +18,7 @@ _LOGGER = getLogger(__name__)
 # ---------------------------
 def utc_from_timestamp(timestamp: float) -> datetime:
     """Return a UTC time from a timestamp."""
-    return utc.localize(datetime.utcfromtimestamp(timestamp))
+    return dt_util.utc_from_timestamp(timestamp)
 
 
 # ---------------------------
