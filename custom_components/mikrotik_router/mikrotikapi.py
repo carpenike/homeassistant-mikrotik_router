@@ -127,7 +127,6 @@ class MikrotikAPI:
                 if self._use_ssl:
                     if self._ssl_wrapper is None:
                         ssl_context = ssl.create_default_context()
-<<<<<<< HEAD
 
                         # For IP-based connections, hostname checks generally don't work with
                         # MikroTik's default/self-signed certs. If the user connects via a
@@ -140,13 +139,6 @@ class MikrotikAPI:
 
                         try:
                             ipaddress.ip_address(host_for_ip_check)
-=======
-                        # For IP-based connections, hostname checks generally don't work
-                        # with MikroTik's default/self-signed certs. If the user connects via
-                        # a hostname and enables verification, do enforce hostname validation.
-                        try:
-                            ipaddress.ip_address(self._host)
->>>>>>> 3acaffd (Follow-up: SSL hostname check + .id fast-path)
                             is_ip_address = True
                         except ValueError:
                             is_ip_address = False
