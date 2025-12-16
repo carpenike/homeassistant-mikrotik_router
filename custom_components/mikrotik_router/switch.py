@@ -82,8 +82,8 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -94,8 +94,8 @@ class MikrotikSwitch(MikrotikEntity, SwitchEntity, RestoreEntity):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -153,13 +153,13 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
 
         if "poe-out" in self._data and self._data["poe-out"] == "off":
             path = "/interface/ethernet"
-            self.coordinator.set_value(path, param, value, "poe-out", "auto-on")
+            await self.coordinator.async_set_value(path, param, value, "poe-out", "auto-on")
 
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> Optional[str]:
         """Turn off the switch."""
@@ -175,13 +175,13 @@ class MikrotikPortSwitch(MikrotikSwitch):
             param = "name"
         value = self._data[self.entity_description.data_reference]
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
 
         if "poe-out" in self._data and self._data["poe-out"] == "auto-on":
             path = "/interface/ethernet"
-            self.coordinator.set_value(path, param, value, "poe-out", "off")
+            await self.coordinator.async_set_value(path, param, value, "poe-out", "off")
 
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -207,8 +207,8 @@ class MikrotikNATSwitch(MikrotikSwitch):
                 value = self.coordinator.data["nat"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -227,8 +227,8 @@ class MikrotikNATSwitch(MikrotikSwitch):
                 value = self.coordinator.data["nat"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -255,8 +255,8 @@ class MikrotikMangleSwitch(MikrotikSwitch):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -276,8 +276,8 @@ class MikrotikMangleSwitch(MikrotikSwitch):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -303,8 +303,8 @@ class MikrotikFilterSwitch(MikrotikSwitch):
                 value = self.coordinator.data["filter"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -323,8 +323,8 @@ class MikrotikFilterSwitch(MikrotikSwitch):
                 value = self.coordinator.data["filter"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -346,8 +346,8 @@ class MikrotikQueueSwitch(MikrotikSwitch):
                 value = self.coordinator.data["queue"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, False)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -362,8 +362,8 @@ class MikrotikQueueSwitch(MikrotikSwitch):
                 value = self.coordinator.data["queue"][uid][".id"]
 
         mod_param = self.entity_description.data_switch_parameter
-        self.coordinator.set_value(path, param, value, mod_param, True)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_set_value(path, param, value, mod_param, True)
+        await self.coordinator.async_request_refresh()
 
 
 # ---------------------------
@@ -381,8 +381,8 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "resume"
-        self.coordinator.execute(path, command, param, value)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_execute(path, command, param, value)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         """Turn off the switch."""
@@ -393,5 +393,5 @@ class MikrotikKidcontrolPauseSwitch(MikrotikSwitch):
         param = self.entity_description.data_reference
         value = self._data[self.entity_description.data_reference]
         command = "pause"
-        self.coordinator.execute(path, command, param, value)
-        await self.coordinator.async_refresh()
+        await self.coordinator.async_execute(path, command, param, value)
+        await self.coordinator.async_request_refresh()
