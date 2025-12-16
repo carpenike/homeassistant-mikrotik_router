@@ -106,6 +106,15 @@ class MikrotikControllerConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         errors = {}
         if user_input is not None:
+            host = user_input[CONF_HOST].strip().lower()
+            use_ssl = bool(user_input[CONF_SSL])
+            port = int(user_input.get(CONF_PORT) or 0)
+            if port == 0:
+                port = 8729 if use_ssl else 8728
+
+            await self.async_set_unique_id(f"{host}:{port}:{'ssl' if use_ssl else 'plain'}")
+            self._abort_if_unique_id_configured()
+
             # Check if instance with this name already exists
             if user_input[CONF_NAME] in configured_instances(self.hass):
                 errors["base"] = "name_exists"
