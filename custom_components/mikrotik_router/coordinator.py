@@ -305,6 +305,11 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
         self.accessrights_reported = False
 
         self.last_hwinfo_update = datetime(1970, 1, 1)
+        self._last_slow_update = datetime(1970, 1, 1)
+        self._slow_update_interval = max(
+            timedelta(seconds=300),
+            self.option_scan_interval * 10,
+        )
         self.rebootcheck = 0
 
     # ---------------------------
@@ -629,68 +634,68 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
         if self.api.connected() and not self.ds["host_hass"]:
             await self.async_get_host_hass()
 
-        if self.api.connected() and self.support_capsman:
-            await self.hass.async_add_executor_job(self.get_capsman_hosts)
+        now = datetime.now().replace(microsecond=0)
+        do_slow_update = self.api.has_reconnected() or (
+            now - self._last_slow_update
+        ) >= self._slow_update_interval
 
-        if self.api.connected() and self.support_wireless:
-            await self.hass.async_add_executor_job(self.get_wireless)
+        if do_slow_update and self.api.connected():
+            self._last_slow_update = now
 
-        if self.api.connected() and self.support_wireless:
-            await self.hass.async_add_executor_job(self.get_wireless_hosts)
+            if self.support_capsman:
+                await self.hass.async_add_executor_job(self.get_capsman_hosts)
 
-        if self.api.connected():
+            if self.support_wireless:
+                await self.hass.async_add_executor_job(self.get_wireless)
+                await self.hass.async_add_executor_job(self.get_wireless_hosts)
+
             await self.hass.async_add_executor_job(self.get_bridge)
-
-        if self.api.connected():
             await self.hass.async_add_executor_job(self.get_arp)
-
-        if self.api.connected():
             await self.hass.async_add_executor_job(self.get_dhcp)
 
-        if self.api.connected():
             await self.async_process_host()
-
-        if self.api.connected():
             await self.hass.async_add_executor_job(self.process_interface_client)
 
-        if self.api.connected() and self.option_sensor_nat:
-            await self.hass.async_add_executor_job(self.get_nat)
+            if self.option_sensor_nat:
+                await self.hass.async_add_executor_job(self.get_nat)
 
-        if self.api.connected() and self.option_sensor_kidcontrol:
-            await self.hass.async_add_executor_job(self.get_kidcontrol)
+            if self.option_sensor_kidcontrol:
+                await self.hass.async_add_executor_job(self.get_kidcontrol)
 
-        if self.api.connected() and self.option_sensor_mangle:
-            await self.hass.async_add_executor_job(self.get_mangle)
+            if self.option_sensor_mangle:
+                await self.hass.async_add_executor_job(self.get_mangle)
 
-        if self.api.connected() and self.option_sensor_filter:
-            await self.hass.async_add_executor_job(self.get_filter)
+            if self.option_sensor_filter:
+                await self.hass.async_add_executor_job(self.get_filter)
 
-        if self.api.connected() and self.option_sensor_netwatch:
-            await self.hass.async_add_executor_job(self.get_netwatch)
+            if self.option_sensor_netwatch:
+                await self.hass.async_add_executor_job(self.get_netwatch)
 
-        if self.api.connected() and self.support_ppp and self.option_sensor_ppp:
-            await self.hass.async_add_executor_job(self.get_ppp)
+            if self.support_ppp and self.option_sensor_ppp:
+                await self.hass.async_add_executor_job(self.get_ppp)
 
-        if self.api.connected() and self.option_sensor_client_traffic:
-            if 0 < self.major_fw_version < 7:
-                await self.hass.async_add_executor_job(self.process_accounting)
-            elif 0 < self.major_fw_version >= 7:
-                await self.hass.async_add_executor_job(self.process_kid_control_devices)
+            if self.option_sensor_client_traffic:
+                if 0 < self.major_fw_version < 7:
+                    await self.hass.async_add_executor_job(self.process_accounting)
+                elif 0 < self.major_fw_version >= 7:
+                    await self.hass.async_add_executor_job(
+                        self.process_kid_control_devices
+                    )
 
-        if self.api.connected() and self.option_sensor_client_captive:
-            await self.hass.async_add_executor_job(self.get_captive)
+            if self.option_sensor_client_captive:
+                await self.hass.async_add_executor_job(self.get_captive)
 
-        if self.api.connected() and self.option_sensor_simple_queues:
-            await self.hass.async_add_executor_job(self.get_queue)
+            if self.option_sensor_simple_queues:
+                await self.hass.async_add_executor_job(self.get_queue)
 
-        if self.api.connected() and self.option_sensor_environment:
-            await self.hass.async_add_executor_job(self.get_environment)
+            if self.option_sensor_environment:
+                await self.hass.async_add_executor_job(self.get_environment)
 
-        if self.api.connected() and self.support_ups:
-            await self.hass.async_add_executor_job(self.get_ups)
+            if self.support_ups:
+                await self.hass.async_add_executor_job(self.get_ups)
 
-        if self.api.connected() and self.support_gps:
-            await self.hass.async_add_executor_job(self.get_gps)
+            if self.support_gps:
+                await self.hass.async_add_executor_job(self.get_gps)
 
         if not self.api.connected():
             raise UpdateFailed("Mikrotik Disconnected")
