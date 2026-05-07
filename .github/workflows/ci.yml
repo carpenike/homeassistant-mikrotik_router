@@ -42,7 +42,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -r requirements_tests.txt
+          # requirements_tests.txt is intentionally NOT installed here:
+          # the Pipfile [dev-packages] block pins ancient pytest/mypy/astroid
+          # versions (from 2020) that transitively pull typed-ast, which has
+          # no wheels for Python 3.12+ and fails to compile against modern
+          # CPython headers. The pytest step below is commented out anyway,
+          # so we don't actually need those test deps to run flake8.
       - name: Lint with flake8
         run: |
           pip install flake8
