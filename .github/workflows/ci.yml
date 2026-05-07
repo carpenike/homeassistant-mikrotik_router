@@ -65,13 +65,25 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: "actions/checkout@v3"
-      - name: Security check - Bandit
-        uses: ioggstream/bandit-report-artifacts@v0.0.2
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
         with:
-          project_path: custom_components/mikrotik_router
-          config_file: .github/bandit.yaml
-          ignore_failure: false
+          python-version: '3.12'
+      - name: Install Bandit
+        # Replaced ioggstream/bandit-report-artifacts@v0.0.2 — that action's
+        # Dockerfile builds on python:3.8-slim-buster, whose Debian apt repos
+        # returned 404 after Buster reached EOL (2024-06) and was archived
+        # (2024-09). The action has not been updated since 2020.
+        run: pip install bandit
+      - name: Run Bandit
+        run: |
+          mkdir -p output
+          # The pre-existing .github/bandit.yaml referenced by the old action
+          # was never committed; bandit's defaults (skip B101 etc.) are fine
+          # for a HACS integration. -ll = report MEDIUM+ severity only.
+          bandit -r custom_components/mikrotik_router -ll -f txt -o output/security_report.txt
       - name: Security check report artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Security report
