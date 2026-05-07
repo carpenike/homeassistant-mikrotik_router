@@ -317,7 +317,21 @@ def fill_ensure_vals(data, uid, ensure_vals) -> dict:
 #   fill_vals_proc
 # ---------------------------
 def fill_vals_proc(data, uid, vals_proc) -> dict:
-    """Add custom keys."""
+    """Add custom keys.
+
+    Note on the missing-key behavior: if a ``val_proc`` block references
+    a ``key`` that is not present in the source data, the literal string
+    ``"unknown"`` is substituted. This was the silent failure mode that
+    caused the v2025.12.15.7 filter-rule collision bug — distinct rules
+    that differed only on a missing key all hashed to the same uniq-id
+    and were mistakenly deduplicated.
+
+    We deliberately keep the substitution (so RouterOS schema drift
+    does not hard-crash the coordinator) but log a WARNING so the
+    silent corruption becomes observable in logs. The first occurrence
+    per (derived-name, missing-key) tuple is logged once per process
+    lifetime to avoid log spam on hot polling paths.
+    """
     _data = data[uid] if uid else data
     for val_sub in vals_proc:
         _name = None
@@ -337,7 +351,11 @@ def fill_vals_proc(data, uid, vals_proc) -> dict:
 
             if _action == "combine":
                 if "key" in val:
-                    tmp = _data[val["key"]] if val["key"] in _data else "unknown"
+                    if val["key"] in _data:
+                        tmp = _data[val["key"]]
+                    else:
+                        tmp = "unknown"
+                        _warn_missing_key(_name, val["key"])
                     _value = f"{_value}{tmp}" if _value else tmp
 
                 if "text" in val:
@@ -351,3 +369,25 @@ def fill_vals_proc(data, uid, vals_proc) -> dict:
                 data[_name] = _value
 
     return data
+
+
+# Track which (derived_name, missing_key) pairs we've already warned
+# about so a hot polling loop doesn't fill the log with duplicates.
+_MISSING_KEY_WARNED: set = set()
+
+
+def _warn_missing_key(derived_name, missing_key):
+    """Log once per (derived_name, missing_key) pair."""
+    seen = (derived_name, missing_key)
+    if seen in _MISSING_KEY_WARNED:
+        return
+    _MISSING_KEY_WARNED.add(seen)
+    _LOGGER.warning(
+        "fill_vals_proc: building %r referenced missing key %r; substituting "
+        "'unknown'. This usually means a 'val_proc' block in coordinator.py "
+        "references a field that is not declared in the same parse_api call's "
+        "'vals=' block, which can cause silent collisions in dedup logic. "
+        "See the v2025.12.15.7 filter-rule fix for an example.",
+        derived_name,
+        missing_key,
+    )
