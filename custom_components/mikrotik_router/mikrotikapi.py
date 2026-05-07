@@ -151,9 +151,15 @@ class MikrotikAPI:
                         # MikroTik's default/self-signed certs. If the user connects via a
                         # hostname and enables verification, do enforce hostname validation.
                         host_for_ip_check = str(self._host).strip()
-                        if host_for_ip_check.startswith("[") and "]" in host_for_ip_check:
+                        if (
+                            host_for_ip_check.startswith("[")
+                            and "]" in host_for_ip_check
+                        ):
                             host_for_ip_check = host_for_ip_check.split("]", 1)[0][1:]
-                        elif ":" in host_for_ip_check and host_for_ip_check.count(":") == 1:
+                        elif (
+                            ":" in host_for_ip_check
+                            and host_for_ip_check.count(":") == 1
+                        ):
                             host_for_ip_check = host_for_ip_check.rsplit(":", 1)[0]
 
                         try:
@@ -180,7 +186,9 @@ class MikrotikAPI:
                 )
             except Exception as e:
                 if not self.connection_error_reported:
-                    _LOGGER.error("Mikrotik %s error while connecting: %s", self._host, e)
+                    _LOGGER.error(
+                        "Mikrotik %s error while connecting: %s", self._host, e
+                    )
                     self.connection_error_reported = True
 
                 self.error_to_strings(f"{e}")

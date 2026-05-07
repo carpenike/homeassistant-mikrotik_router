@@ -112,7 +112,9 @@ class MikrotikControllerConfigFlow(ConfigFlow, domain=DOMAIN):
             if port == 0:
                 port = 8729 if use_ssl else 8728
 
-            await self.async_set_unique_id(f"{host}:{port}:{'ssl' if use_ssl else 'plain'}")
+            await self.async_set_unique_id(
+                f"{host}:{port}:{'ssl' if use_ssl else 'plain'}"
+            )
             self._abort_if_unique_id_configured()
 
             # Check if instance with this name already exists

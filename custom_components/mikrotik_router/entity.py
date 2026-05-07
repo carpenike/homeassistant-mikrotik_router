@@ -36,7 +36,9 @@ from .helper import format_attribute
 _LOGGER = getLogger(__name__)
 
 
-def _legacy_unique_id(inst: str, entity_description, data: Mapping[str, Any] | None) -> str:
+def _legacy_unique_id(
+    inst: str, entity_description, data: Mapping[str, Any] | None
+) -> str:
     """Legacy unique_id format used historically by this integration.
 
     NOTE: This depends on the config entry name (inst) and slugifies a data value.
@@ -165,7 +167,9 @@ async def async_add_entities(
         async def async_check_exist(obj, unique_id: str) -> None:
             """Check entity exists."""
             entity_registry = er.async_get(hass)
-            entity_id = entity_registry.async_get_entity_id(platform.domain, DOMAIN, unique_id)
+            entity_id = entity_registry.async_get_entity_id(
+                platform.domain, DOMAIN, unique_id
+            )
             entity = entity_registry.async_get(entity_id)
             if entity is None or (
                 (entity_id not in platform.entities) and (entity.disabled is False)

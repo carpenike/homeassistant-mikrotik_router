@@ -86,7 +86,9 @@ class MikrotikRouterOSUpdate(MikrotikEntity, UpdateEntity):
         if backup:
             await self.coordinator.async_execute("/system/backup", "save", None, None)
 
-        await self.coordinator.async_execute("/system/package/update", "install", None, None)
+        await self.coordinator.async_execute(
+            "/system/package/update", "install", None, None
+        )
 
     async def async_release_notes(self) -> str:
         """Return the release notes."""
@@ -155,7 +157,9 @@ class MikrotikRouterBoardFWUpdate(MikrotikEntity, UpdateEntity):
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        await self.coordinator.async_execute("/system/routerboard", "upgrade", None, None)
+        await self.coordinator.async_execute(
+            "/system/routerboard", "upgrade", None, None
+        )
         await self.coordinator.async_execute("/system", "reboot", None, None)
 
 

@@ -627,9 +627,10 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
             await self.async_get_host_hass()
 
         now = datetime.now().replace(microsecond=0)
-        do_slow_update = self.api.has_reconnected() or (
-            now - self._last_slow_update
-        ) >= self._slow_update_interval
+        do_slow_update = (
+            self.api.has_reconnected()
+            or (now - self._last_slow_update) >= self._slow_update_interval
+        )
 
         if do_slow_update and self.api.connected():
             self._last_slow_update = now
@@ -734,7 +735,9 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
             self.accessrights_reported = True
             required_policies = {"api", "write", "policy", "reboot", "test"}
             missing_policies = sorted(
-                policy for policy in required_policies if policy not in self.ds["access"]
+                policy
+                for policy in required_policies
+                if policy not in self.ds["access"]
             )
             if missing_policies:
                 _LOGGER.warning(
@@ -846,7 +849,9 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
         # Udpate virtual interfaces
         bonding = False
         monitor_interval = max(self.option_scan_interval.seconds, 60)
-        do_ethernet_monitor = (time() - self._ethernet_monitor_last_update) >= monitor_interval
+        do_ethernet_monitor = (
+            time() - self._ethernet_monitor_last_update
+        ) >= monitor_interval
         if do_ethernet_monitor:
             self._ethernet_monitor_last_update = time()
 
@@ -2436,7 +2441,11 @@ class MikrotikCoordinator(DataUpdateCoordinator[None]):
 
             try:
                 accounting_settings = self.api.query("/ip/accounting") or []
-                threshold = accounting_settings[0].get("threshold") if accounting_settings else None
+                threshold = (
+                    accounting_settings[0].get("threshold")
+                    if accounting_settings
+                    else None
+                )
                 threshold = int(threshold) if threshold is not None else None
             except (TypeError, ValueError, IndexError, AttributeError):
                 threshold = None

@@ -289,7 +289,9 @@ class MikrotikNATSwitch(MikrotikSwitch):
                 value = self.coordinator.data["nat"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -319,7 +321,9 @@ class MikrotikNATSwitch(MikrotikSwitch):
                 value = self.coordinator.data["nat"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -357,7 +361,9 @@ class MikrotikMangleSwitch(MikrotikSwitch):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -388,7 +394,9 @@ class MikrotikMangleSwitch(MikrotikSwitch):
                 value = self.coordinator.data["mangle"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -416,7 +424,9 @@ class MikrotikFilterSwitch(MikrotikSwitch):
         when the cached ``self._data['.id']`` is missing.
         """
         d = self._data
-        g = lambda k: d.get(k, "any")  # noqa: E731 - missing fields default to "any" to match coordinator
+        g = lambda k: d.get(
+            k, "any"
+        )  # noqa: E731 - missing fields default to "any" to match coordinator
         return (
             f"{g('chain')},{g('action')},{g('protocol')},{g('layer7-protocol')},"
             f"{g('in-interface')},{g('in-interface-list')}:"
@@ -442,11 +452,16 @@ class MikrotikFilterSwitch(MikrotikSwitch):
         value = self._data.get(".id")
         expected_uniq_id = self._build_filter_uniq_id()
         for uid in self.coordinator.data["filter"]:
-            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id:
+            if (
+                value is None
+                and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id
+            ):
                 value = self.coordinator.data["filter"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -469,11 +484,16 @@ class MikrotikFilterSwitch(MikrotikSwitch):
         value = self._data.get(".id")
         expected_uniq_id = self._build_filter_uniq_id()
         for uid in self.coordinator.data["filter"]:
-            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id:
+            if (
+                value is None
+                and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id
+            ):
                 value = self.coordinator.data["filter"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -502,11 +522,17 @@ class MikrotikQueueSwitch(MikrotikSwitch):
         param = ".id"
         value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if (
+                value is None
+                and self.coordinator.data["queue"][uid]["name"]
+                == f"{self._data['name']}"
+            ):
                 value = self.coordinator.data["queue"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
@@ -528,11 +554,17 @@ class MikrotikQueueSwitch(MikrotikSwitch):
         param = ".id"
         value = self._data.get(".id")
         for uid in self.coordinator.data["queue"]:
-            if value is None and self.coordinator.data["queue"][uid]["name"] == f"{self._data['name']}":
+            if (
+                value is None
+                and self.coordinator.data["queue"][uid]["name"]
+                == f"{self._data['name']}"
+            ):
                 value = self.coordinator.data["queue"][uid][".id"]
 
         if value is None:
-            _LOGGER.error("Mikrotik %s: unable to resolve .id for %s", self.entity_id, path)
+            _LOGGER.error(
+                "Mikrotik %s: unable to resolve .id for %s", self.entity_id, path
+            )
             return
 
         mod_param = self.entity_description.data_switch_parameter
