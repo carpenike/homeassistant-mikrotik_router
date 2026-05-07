@@ -2,14 +2,8 @@ name: CI
 
 on:
   push:
-    paths:
-      - 'custom_components/**'
-      - 'tests/**'
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - 'custom_components/**'
-      - 'tests/**'
   workflow_dispatch:
 
 jobs:
