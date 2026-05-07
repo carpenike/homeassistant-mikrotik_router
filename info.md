@@ -25,9 +25,9 @@ Monitor and control your Mikrotik device from Home Assistant.
  * Supports monitoring of multiple mikrotik devices simultaneously
 
 ## Links
-- [Documentation](https://github.com/tomaae/homeassistant-mikrotik_router/tree/master)
-- [Configuration](https://github.com/tomaae/homeassistant-mikrotik_router/tree/master#setup-integration)
-- [Report a Bug](https://github.com/tomaae/homeassistant-mikrotik_router/issues/new?labels=bug&template=bug_report.md&title=%5BBug%5D)
-- [Suggest an idea](https://github.com/tomaae/homeassistant-mikrotik_router/issues/new?labels=enhancement&template=feature_request.md&title=%5BFeature%5D)
+- [Documentation](https://github.com/carpenike/homeassistant-mikrotik_router/tree/master)
+- [Configuration](https://github.com/carpenike/homeassistant-mikrotik_router/tree/master#setup-integration)
+- [Report a Bug](https://github.com/carpenike/homeassistant-mikrotik_router/issues/new?labels=bug&template=bug_report.md&title=%5BBug%5D)
+- [Suggest an idea](https://github.com/carpenike/homeassistant-mikrotik_router/issues/new?labels=enhancement&template=feature_request.md&title=%5BFeature%5D)
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G2G71MKZG)

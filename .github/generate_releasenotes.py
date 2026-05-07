@@ -20,12 +20,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import re
 import sys
 from github import Github
 
+# Repository slug like "owner/name". Defaults to GITHUB_REPOSITORY (always
+# set inside GitHub Actions) so the script works in any fork without edits;
+# falls back to the original upstream slug when run manually outside CI.
+REPO_SLUG = os.environ.get("GITHUB_REPOSITORY") or "tomaae/homeassistant-mikrotik_router"
+REPO_OWNER = REPO_SLUG.split("/", 1)[0]
+
 BODY = """
-[![Downloads for this release](https://img.shields.io/github/downloads/tomaae/homeassistant-mikrotik_router/{version}/total.svg)](https://github.com/tomaae/homeassistant-mikrotik_router/releases/{version})
+[![Downloads for this release](https://img.shields.io/github/downloads/""" + REPO_SLUG + """/{version}/total.svg)](https://github.com/""" + REPO_SLUG + """/releases/{version})
 
 {changes}
 """
@@ -58,7 +65,7 @@ def new_commits(repo, sha):
 
 def last_integration_release(github, skip=True):
     """Return last release."""
-    repo = github.get_repo("tomaae/homeassistant-mikrotik_router")
+    repo = github.get_repo(REPO_SLUG)
     tag_sha = None
     data = {}
     tags = list(repo.get_tags())
@@ -79,7 +86,7 @@ def last_integration_release(github, skip=True):
 
 def get_integration_commits(github, skip=True):
     changes = ""
-    repo = github.get_repo("tomaae/homeassistant-mikrotik_router")
+    repo = github.get_repo(REPO_SLUG)
     commits = new_commits(repo, last_integration_release(github, skip)["tag_sha"])
 
     if not commits:
@@ -114,7 +121,7 @@ def get_integration_commits(github, skip=True):
 
 # Update release notes:
 UPDATERELEASE = str(sys.argv[4])
-REPO = GITHUB.get_repo("tomaae/homeassistant-mikrotik_router")
+REPO = GITHUB.get_repo(REPO_SLUG)
 if UPDATERELEASE == "yes":
     VERSION = str(sys.argv[6]).replace("refs/tags/", "")
     RELEASE = REPO.get_release(VERSION)
@@ -135,7 +142,7 @@ else:
         REPO.create_issue(
             title=f"Create release {VERSION}?",
             labels=["New release"],
-            assignee="tomaae",
+            assignee=REPO_OWNER,
             body=CHANGES.format(
                 integration_changes=integration_changes,
             ),
