@@ -192,6 +192,7 @@ You can add this integration several times for different devices.
 
 NOTES: 
 - Do not mistake "Mikrotik Router" integration with HA build-in integration named "Mikrotik".
+- The HA built-in `mikrotik` integration pins `librouteros==3.2.0` while this integration requires `librouteros>=3.4.1`. Pip resolves a single shared version per HA install, and the built-in's exact pin wins. **Do not enable both integrations on the same HA instance** — if you have the built-in enabled, this integration will fail to connect with `connect() got an unexpected keyword argument` errors. Use one or the other.
 - If you dont see "Mikrotik Router" integration, clear your browser cache.
 
 ![Add Integration](https://raw.githubusercontent.com/tomaae/homeassistant-mikrotik_router/master/docs/assets/images/ui/setup_integration.png)

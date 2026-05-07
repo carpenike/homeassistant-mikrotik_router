@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v5"
       - name: Black Code Format Check
         uses: lgeiger/black-action@master
         with:
@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v5"
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Generate Requirements lists
@@ -58,9 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v5"
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install Bandit
@@ -89,6 +89,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v5"
       - name: Run hassfest
         uses: home-assistant/actions/hassfest@master
