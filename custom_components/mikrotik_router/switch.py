@@ -408,6 +408,30 @@ class MikrotikMangleSwitch(MikrotikSwitch):
 class MikrotikFilterSwitch(MikrotikSwitch):
     """Representation of a Filter switch."""
 
+    def _build_filter_uniq_id(self) -> str:
+        """Reconstruct the coordinator's filter ``uniq-id`` for this entity.
+
+        Must stay in sync with ``Coordinator.get_filter`` ``val_proc`` block in
+        ``coordinator.py``. Used as a fallback to resolve the RouterOS ``.id``
+        when the cached ``self._data['.id']`` is missing.
+        """
+        d = self._data
+        g = lambda k: d.get(k, "any")  # noqa: E731 - missing fields default to "any" to match coordinator
+        return (
+            f"{g('chain')},{g('action')},{g('protocol')},{g('layer7-protocol')},"
+            f"{g('in-interface')},{g('in-interface-list')}:"
+            f"{g('src-address')},{g('src-address-list')}:{g('src-port')}-"
+            f"{g('out-interface')},{g('out-interface-list')}:"
+            f"{g('dst-address')},{g('dst-address-list')}:{g('dst-port')}"
+            f"|cs={g('connection-state')}"
+            f"|cns={g('connection-nat-state')}"
+            f"|cm={g('connection-mark')}"
+            f"|pm={g('packet-mark')}"
+            f"|rm={g('routing-mark')}"
+            f"|tf={g('tcp-flags')}"
+            f"|al={g('address-list')}"
+        )
+
     async def async_turn_on(self) -> None:
         """Turn on the switch."""
         if "write" not in self.coordinator.data["access"]:
@@ -416,12 +440,9 @@ class MikrotikFilterSwitch(MikrotikSwitch):
         path = self.entity_description.data_switch_path
         param = ".id"
         value = self._data.get(".id")
+        expected_uniq_id = self._build_filter_uniq_id()
         for uid in self.coordinator.data["filter"]:
-            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
-                f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
-                f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
-                f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
-            ):
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id:
                 value = self.coordinator.data["filter"][uid][".id"]
 
         if value is None:
@@ -446,12 +467,9 @@ class MikrotikFilterSwitch(MikrotikSwitch):
         path = self.entity_description.data_switch_path
         param = ".id"
         value = self._data.get(".id")
+        expected_uniq_id = self._build_filter_uniq_id()
         for uid in self.coordinator.data["filter"]:
-            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == (
-                f"{self._data['chain']},{self._data['action']},{self._data['protocol']},{self._data['layer7-protocol']},"
-                f"{self._data['in-interface']},{self._data['in-interface-list']}:{self._data['src-address']},{self._data['src-address-list']}:{self._data['src-port']}-"
-                f"{self._data['out-interface']},{self._data['out-interface-list']}:{self._data['dst-address']},{self._data['dst-address-list']}:{self._data['dst-port']}"
-            ):
+            if value is None and self.coordinator.data["filter"][uid]["uniq-id"] == expected_uniq_id:
                 value = self.coordinator.data["filter"][uid][".id"]
 
         if value is None:
