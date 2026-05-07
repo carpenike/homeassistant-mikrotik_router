@@ -1,18 +1,18 @@
 {
     "domain": "mikrotik_router",
     "name": "Mikrotik Router",
-    "config_flow": true,
-    "iot_class": "local_polling",
-    "documentation": "https://github.com/carpenike/homeassistant-mikrotik_router",
-    "issue_tracker": "https://github.com/carpenike/homeassistant-mikrotik_router/issues",
-    "dependencies": [],
-    "requirements": [
-        "librouteros>=3.4.1",
-        "mac-vendor-lookup>=0.1.12"
-    ],
     "codeowners": [
         "@carpenike",
         "@tomaae"
+    ],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "https://github.com/carpenike/homeassistant-mikrotik_router",
+    "iot_class": "local_polling",
+    "issue_tracker": "https://github.com/carpenike/homeassistant-mikrotik_router/issues",
+    "requirements": [
+        "librouteros>=3.4.1",
+        "mac-vendor-lookup>=0.1.12"
     ],
     "version": "2025.12.15.8"
 }
