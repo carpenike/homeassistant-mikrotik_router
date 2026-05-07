@@ -14,10 +14,18 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: "actions/checkout@v5"
-      - name: Black Code Format Check
-        uses: lgeiger/black-action@master
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          args: ". --check --fast --diff"
+          python-version: '3.12'
+      - name: Black Code Format Check
+        # Pin black to a specific version so CI and local stay in sync.
+        # The previous lgeiger/black-action@master built its own Docker image
+        # whose black version drifted away from any sensible local install,
+        # producing whitespace-only diffs that didn't reproduce locally.
+        run: |
+          pip install black==25.11.0
+          black . --check --fast --diff
 
   tests:
     name: Python Tests
@@ -52,7 +60,9 @@ jobs:
           # Tests stub out HA modules in tests/conftest.py so we don't need
           # to install homeassistant (~500 MB) just to run pure-logic tests.
           # See tests/conftest.py for the stubbing approach.
-          pip install pytest
+          # voluptuous is imported by apiparser at module load time and is
+          # NOT in requirements.txt (HA bundles it), so install it here.
+          pip install pytest voluptuous
           pytest tests/ -v
 
   security:
